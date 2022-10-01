@@ -1,0 +1,25 @@
+version: 2.1
+jobs:
+  build:
+    working_directory: /usr/src/app
+    docker:
+      - image: docker:22.06-rc-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build application Docker image
+          command: |
+            docker-compose -f /usr/src/app/docker-compose-build.yaml build --parallel
+      - deploy:
+          name: Push application Docker image
+          command: |
+            docker tag reverseproxy "${DOCKER_USERNAME}/reverseproxy:${CIRCLE_SHA1}" 
+            docker tag udagram-api-user "${DOCKER_USERNAME}/udagram-api-user:${CIRCLE_SHA1}" 
+            docker tag udagram-api-feed "${DOCKER_USERNAME}/udagram-api-feed:${CIRCLE_SHA1}" 
+            docker tag udagram-frontend "${DOCKER_USERNAME}/udagram-frontend:${CIRCLE_SHA1}" 
+            echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin 
+            docker push "${DOCKER_USERNAME}/reverseproxy:${CIRCLE_SHA1}"
+            docker push "${DOCKER_USERNAME}/udagram-api-user:${CIRCLE_SHA1}" 
+            docker push "${DOCKER_USERNAME}/udagram-api-feed:${CIRCLE_SHA1}" 
+            docker push "${DOCKER_USERNAME}/udagram-frontend:${CIRCLE_SHA1}" 
